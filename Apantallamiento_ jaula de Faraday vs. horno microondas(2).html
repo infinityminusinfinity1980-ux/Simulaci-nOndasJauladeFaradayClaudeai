@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Apantallamiento: jaula de Faraday vs. horno microondas</title>
+<style>
+:root{--bg:#f3f6f8;--cd:#fff;--tx:#14202b;--mu:#566574;--bd:#d9e0e6;--c1:#1f5fd1;--c2:#b85f00;--ok:#13795b;--bad:#b42318;--hl:#e3edff;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1319;--cd:#151d26;--tx:#e6ecf2;--mu:#98a5b4;--bd:#27323f;--c1:#7aa8ff;--c2:#fbbf24;--ok:#4ade80;--bad:#fb8a7a;--hl:#1b2a45;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1319;--cd:#151d26;--tx:#e6ecf2;--mu:#98a5b4;--bd:#27323f;--c1:#7aa8ff;--c2:#fbbf24;--ok:#4ade80;--bad:#fb8a7a;--hl:#1b2a45;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.w{max-width:1080px;margin:0 auto;padding:18px 14px 40px}
+h1{font-size:1.55rem;line-height:1.2;margin:.2em 0 .3em;letter-spacing:-.01em}
+h2{font-size:1.1rem;margin:0 0 .6em}
+h3{font-size:1rem;margin:0 0 .3em}
+p{margin:.3em 0}.mu{color:var(--mu);font-size:.9rem}
+.cd{background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:14px;margin:14px 0}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px 16px}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+label{display:flex;justify-content:space-between;font-size:.85rem;color:var(--mu)}
+label b{color:var(--tx);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--c1)}
+canvas{width:100%;display:block}
+#cvA,#cvB{height:150px}#cv{height:300px}
+.big{font-size:1.9rem;font-weight:700;line-height:1.1}
+.A{border-left:4px solid var(--c1)}.B{border-left:4px solid var(--c2)}
+.v{font-weight:600;margin-top:.4em}.ok{color:var(--ok)}.bad{color:var(--bad)}
+.tb{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem;min-width:760px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+tbody tr{cursor:pointer}tbody tr:hover{background:var(--hl)}tr.s{background:var(--hl);font-weight:600}
+button{font:inherit;background:var(--c1);color:#fff;border:0;border-radius:6px;padding:7px 12px;cursor:pointer}
+button:focus-visible,input:focus-visible,tr:focus-visible{outline:2px solid var(--c1);outline-offset:2px}
+code{background:var(--hl);padding:1px 5px;border-radius:4px;font-size:.88em}
+ul{margin:.3em 0;padding-left:1.2em}li{margin:.35em 0}
+</style></head><body><div class="w">
+<h1>Apantallamiento electromagnético: jaula de Faraday (malla de 1 cm) frente a un horno microondas</h1>
+<p class="mu">Simulación analítica de primer orden. Elige una frecuencia (control o fila de la tabla) y compara cómo responden la radio FM y la telefonía móvil. La longitud de onda es λ = c / f.</p>
+
+<div class="cd"><h2>Señal incidente</h2>
+<label for="fr"><span>Frecuencia</span><b id="fl"></b></label>
+<input id="fr" type="range" min="0" max="1000" value="0" aria-label="Frecuencia">
+<p class="mu" id="sk"></p></div>
+
+<div class="g2">
+<div class="cd A" id="rA"></div><div class="cd B" id="rB"></div></div>
+
+<div class="cd"><h2>Onda incidente (azul) y onda transmitida (ámbar)</h2>
+<canvas id="cvA" aria-label="Onda frente a la jaula"></canvas>
+<canvas id="cvB" aria-label="Onda frente al horno"></canvas>
+<p class="mu">Amplitudes a escala lineal real. La longitud de onda dibujada usa escala logarítmica (la real de FM es 300 veces el hueco de la malla), por eso el dato exacto de λ/s está en la tabla.</p></div>
+
+<div class="cd"><h2>Efectividad de apantallamiento (SE) según la frecuencia</h2>
+<canvas id="cv" aria-label="SE frente a frecuencia"></canvas>
+<p class="mu">La franja es la banda FM (88–108 MHz). La línea punteada es la SE necesaria para dejar la señal bajo la sensibilidad del receptor.</p></div>
+
+<div class="cd"><h2>Tabla interactiva por banda</h2>
+<div class="tb"><table><thead><tr><th>Banda</th><th>f (MHz)</th><th>λ (cm)</th><th>s/λ (%)</th><th>SE jaula (dB)</th><th>SE horno (dB)</th><th>Dentro jaula (dBm)</th><th>Dentro horno (dBm)</th><th>Jaula</th><th>Horno</th></tr></thead><tbody id="tb"></tbody></table></div>
+<p style="margin-top:10px"><button id="cp">Copiar tabla para Word</button> <span class="mu" id="cm"></span></p></div>
+
+<div class="cd"><h2>Parámetros del modelo</h2><div class="g" id="pr"></div>
+<p class="mu">Los valores del horno (costura, solape, trampa) son supuestos de ingeniería, no mediciones de un modelo concreto. Cámbialos para ver cuánto pesan.</p></div>
+
+<div class="cd"><h2>Por qué ocurre</h2><ul>
+<li><b>Longitud de onda frente al hueco.</b> Un hueco pequeño frente a λ refleja la onda. En FM, λ≈3 m y la malla de 1 cm es el 0,3 % de λ: SE≈40 dB. En telefonía, λ≈11–43 cm y el hueco pesa entre el 2 y el 9 %: la SE baja a 12–23 dB.</li>
+<li><b>“No apantallada del todo” no significa 0 dB.</b> Un móvil detecta señales de hasta −110 dBm. Con −75 dBm en el exterior, hacen falta unos 35 dB para perderla. La malla da menos en telefonía, así que la señal atenuada sigue siendo detectable.</li>
+<li><b>El horno se diseñó para 2,45 GHz.</b> Sus orificios (≈1,5 mm) y la trampa de cuarto de onda de la puerta bloquean esa frecuencia. Lejos de 2,45 GHz la costura de la puerta domina. Para FM (λ≈3 m) esa costura, de ≈30 cm, actúa como una ranura: la fórmula de la ranura da solo ≈14 dB y el modelo fija un mínimo de 20 dB por el solape de la puerta (es lo que muestra la tabla), frente a ≈40 dB de la malla cerrada. En el modelo, esta es la causa de que la FM pase en el horno y no en la malla cerrada.</li>
+<li><b>El material casi no importa.</b> La profundidad de piel del zinc o del acero es de micras, mucho menor que el alambre. La SE la fijan las aberturas, no el absorbido en el metal.</li>
+<li><b>Resonancias.</b> Una caja de ≈30 cm resuena cerca de 700 MHz. Cerca de esas frecuencias la SE real puede caer más (no incluido en el modelo).</li></ul>
+<p><b>Ecuaciones.</b> Malla: <code>SE = 10·log[1 + (λ / (2·s·ln(s/2πr)))²]</code> · Ranura: <code>SE = 20·log(λ/2L)</code> · Orificio: <code>SE = 20·log(λ/2d) + 32·t/d</code> · Vías en paralelo: <code>SE = −10·log Σ 10^(−SEᵢ/10)</code>.</p>
+<p class="mu"><b>Límites.</b> Onda plana, incidencia normal, campo lejano, sin cable de red ni resonancias de la cavidad. Sirve para explicar tendencias; para cifras exactas hace falta medir. Referencias: H. Ott, <i>Electromagnetic Compatibility Engineering</i> (Wiley, 2009); C. Paul, <i>Introduction to Electromagnetic Compatibility</i> (Wiley, 2006); N. Marcuvitz, <i>Waveguide Handbook</i> (McGraw-Hill, 1951).</p></div>
+</div>
+<script>
+const C=299792458,MU=4e-7*Math.PI,SIG=1.7e7,$=i=>document.getElementById(i);
+const P={f:50,s:10,dw:.7,hd:1.5,t:.6,Lm:30,base:20,ch:60,Lc:0,fo:-65,fs:-100,po:-75,ps:-110};
+const D=[['s','Separación de la malla (mm)',2,30,.5],['dw','Diámetro del alambre (mm)',.2,2,.1],['Lc','Abertura sin contacto en la jaula (cm)',0,40,1],['hd','Orificio de la pantalla del horno (mm)',.5,4,.1],['t','Espesor de la pantalla (mm)',.2,2,.1],['Lm','Costura de la puerta, longitud efectiva (cm)',5,60,1],['base','Aporte mínimo del solape de puerta (dB)',0,40,1],['ch','Trampa de cuarto de onda a 2,45 GHz (dB)',0,80,1],['fo','FM: nivel externo (dBm)',-90,-30,1],['fs','FM: sensibilidad (dBm)',-120,-80,1],['po','Móvil: nivel externo (dBm)',-100,-40,1],['ps','Móvil: sensibilidad (dBm)',-125,-90,1]];
+const R=[['Radio FM',98],['Telefonía 700',700],['Telefonía 850',850],['Telefonía 900',900],['Telefonía 1800',1800],['Telefonía 1900',1900],['Telefonía 2100',2100],['Horno / Wi‑Fi 2,4 GHz',2450],['Telefonía 2600',2600]];
+const nf=(x,d=1)=>x.toLocaleString('es',{minimumFractionDigits:d,maximumFractionDigits:d});
+const lam=f=>C/(f*1e6),isFM=f=>f<=120,lv=f=>isFM(f)?[P.fo,P.fs]:[P.po,P.ps];
+const sum=a=>-10*Math.log10(a.reduce((x,v)=>x+(isFinite(v)?Math.pow(10,-v/10):0),0)||1e-30);
+function mesh(f){const l=lam(f),s=P.s/1e3,r=P.dw/2e3,L=Math.max(.1,Math.log(s/(2*Math.PI*r))),x=l/(2*s*L);return 10*Math.log10(1+x*x)}
+function scr(f){const l=lam(f),d=P.hd/1e3,t=P.t/1e3,R0=Math.max(0,20*Math.log10(l/(2*d))),fc=1.841*C/(Math.PI*d)/1e6;return R0+(f<fc?32*t/d*Math.sqrt(1-(f/fc)**2):0)}
+function slot(f,L){return L<=0?Infinity:Math.max(0,20*Math.log10(lam(f)/(2*L/100)))}
+function choke(f){const u=5*(f/2450-2450/f);return P.ch/(1+u*u)}
+const cage=f=>sum([mesh(f),slot(f,P.Lc)]);
+const oven=f=>sum([scr(f),Math.max(slot(f,P.Lm),P.base)+choke(f)]);
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function fit(cv){const r=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(cv.width!==Math.round(w*r)||cv.height!==Math.round(h*r)){cv.width=Math.round(w*r);cv.height=Math.round(h*r)}const x=cv.getContext('2d');x.setTransform(r,0,0,r,0,0);return[x,w,h]}
+function card(id,nm,se){const[o,s]=lv(P.f),pin=o-se,pass=pin>s,p=100*Math.pow(10,-se/10);
+$(id).innerHTML=`<h3>${nm}</h3><div class="big">${nf(se)} dB</div><p>Potencia que atraviesa: ${nf(p,p<1?3:1)} %</p><p>Señal dentro: ${nf(pin,0)} dBm (umbral del receptor: ${s} dBm)</p><p class="v ${pass?'bad':'ok'}">${pass?'Se sigue recibiendo: apantallamiento incompleto':'Bajo la sensibilidad: apantallada'}</p>`}
+function wave(id,se,T,nm){const[x,w,h]=fit($(id));x.clearRect(0,0,w,h);const l=lam(P.f),lp=30+140*(Math.log10(l)+1)/1.78,m=h/2,A=h*.3,wx=w/2,at=A*Math.pow(10,-se/20);
+x.lineWidth=2;x.strokeStyle=col('--c1');x.beginPath();for(let i=0;i<=wx;i+=2){const y=m-A*Math.sin(2*Math.PI*(i/lp-T));i?x.lineTo(i,y):x.moveTo(i,y)}x.stroke();
+x.strokeStyle=col('--c2');x.beginPath();for(let i=wx;i<=w;i+=2){const y=m-at*Math.sin(2*Math.PI*(i/lp-T));i===wx?x.moveTo(i,y):x.lineTo(i,y)}x.stroke();
+x.strokeStyle=col('--mu');x.lineWidth=1;x.setLineDash([6,4]);x.beginPath();x.moveTo(wx,4);x.lineTo(wx,h-4);x.stroke();x.setLineDash([]);
+x.fillStyle=col('--tx');x.font='12px system-ui,sans-serif';x.fillText(nm,8,16);x.fillText('Transmitida: '+nf(100*Math.pow(10,-se/20))+' % de la amplitud',wx+8,16)}
+let T0=performance.now();
+function loop(n){const T=RM?0:(n-T0)/1600;wave('cvA',cage(P.f),T,'Jaula de malla');wave('cvB',oven(P.f),T,'Horno microondas');if(!RM)requestAnimationFrame(loop)}
+function chart(){const[x,w,h]=fit($('cv')),L=46,B=26,T=10,Rr=10,pw=w-L-Rr,ph=h-B-T,X=f=>L+pw*Math.log(f/50)/Math.log(60),Y=v=>T+ph*(1-Math.min(Math.max(v,0),80)/80);
+x.clearRect(0,0,w,h);x.fillStyle=col('--hl');x.fillRect(X(88),T,X(108)-X(88),ph);
+x.font='11px system-ui,sans-serif';x.lineWidth=1;x.strokeStyle=col('--bd');
+for(let v=0;v<=80;v+=20){x.fillStyle=col('--mu');x.beginPath();x.moveTo(L,Y(v));x.lineTo(w-Rr,Y(v));x.stroke();x.fillText(v+' dB',4,Y(v)+4)}
+[50,100,200,500,1000,2000].forEach(f=>{x.beginPath();x.moveTo(X(f),T);x.lineTo(X(f),T+ph);x.stroke();x.fillStyle=col('--mu');x.fillText(f>=1000?f/1000+' GHz':f+' MHz',X(f)-18,h-8)});
+[[cage,'--c1'],[oven,'--c2']].forEach(([fn,c])=>{x.strokeStyle=col(c);x.lineWidth=2.5;x.beginPath();for(let i=0;i<=300;i++){const f=50*Math.pow(60,i/300),y=Y(fn(f));i?x.lineTo(X(f),y):x.moveTo(X(f),y)}x.stroke()});
+const nd=lv(P.f)[0]-lv(P.f)[1];x.strokeStyle=col('--tx');x.lineWidth=1;x.setLineDash([5,4]);x.beginPath();x.moveTo(L,Y(nd));x.lineTo(w-Rr,Y(nd));x.stroke();x.setLineDash([]);x.fillStyle=col('--tx');x.fillText('SE necesaria ≈ '+nd+' dB',L+6,Y(nd)-5);
+x.strokeStyle=col('--tx');x.beginPath();x.moveTo(X(P.f),T);x.lineTo(X(P.f),T+ph);x.stroke();
+[[cage,'--c1'],[oven,'--c2']].forEach(([fn,c])=>{x.fillStyle=col(c);x.beginPath();x.arc(X(P.f),Y(fn(P.f)),5,0,7);x.fill()});
+x.fillStyle=col('--c1');x.fillRect(w-190,T+4,10,10);x.fillStyle=col('--tx');x.fillText('Jaula (malla 1 cm)',w-176,T+13);
+x.fillStyle=col('--c2');x.fillRect(w-190,T+20,10,10);x.fillStyle=col('--tx');x.fillText('Horno microondas',w-176,T+29)}
+function table(){$('tb').innerHTML=R.map(([n,f])=>{const a=cage(f),b=oven(f),[o,s]=lv(f),pa=o-a,pb=o-b,ok=v=>v>s?'<span class="bad">Pasa</span>':'<span class="ok">Bloqueada</span>';
+return`<tr tabindex="0" data-f="${f}" class="${Math.abs(f-P.f)/f<.03?'s':''}"><td>${n}</td><td>${nf(f,0)}</td><td>${nf(lam(f)*100)}</td><td>${nf(P.s/1e3/lam(f)*100,2)}</td><td>${nf(a)}</td><td>${nf(b)}</td><td>${nf(pa,0)}</td><td>${nf(pb,0)}</td><td>${ok(pa)}</td><td>${ok(pb)}</td></tr>`}).join('')}
+function upd(){const l=lam(P.f),dl=1e6/Math.sqrt(Math.PI*P.f*1e6*MU*SIG);
+$('fl').textContent=nf(P.f,P.f<100?1:0)+' MHz · λ = '+(l>=1?nf(l,2)+' m':nf(l*100)+' cm');
+$('sk').textContent='Tipo de señal: '+(isFM(P.f)?'radio FM':'telefonía móvil / microondas')+' · Profundidad de piel del zinc: '+nf(dl,1)+' µm · Hueco de malla / λ = '+nf(P.s/1e3/l*100,2)+' %';
+card('rA','Maqueta de jaula de Faraday',cage(P.f));card('rB','Horno microondas',oven(P.f));chart();table();if(RM)loop(0)}
+$('fr').oninput=e=>{P.f=50*Math.pow(60,e.target.value/1000);upd()};
+$('tb').onclick=e=>{const r=e.target.closest('tr');if(r){P.f=+r.dataset.f;$('fr').value=1000*Math.log(P.f/50)/Math.log(60);upd()}};
+$('tb').onkeydown=e=>{if(e.key==='Enter')e.target.click()};
+$('pr').innerHTML=D.map(([k,t,a,b,s])=>`<div><label for="p_${k}"><span>${t}</span><b id="v_${k}">${P[k]}</b></label><input id="p_${k}" type="range" min="${a}" max="${b}" step="${s}" value="${P[k]}"></div>`).join('');
+D.forEach(([k])=>$('p_'+k).oninput=e=>{P[k]=+e.target.value;$('v_'+k).textContent=P[k];upd()});
+$('cp').onclick=async()=>{const t=['Banda\tf (MHz)\tλ (cm)\ts/λ (%)\tSE jaula (dB)\tSE horno (dB)'].concat(R.map(([n,f])=>[n,f,nf(lam(f)*100),nf(P.s/1e3/lam(f)*100,2),nf(cage(f)),nf(oven(f))].join('\t'))).join('\n');
+try{await navigator.clipboard.writeText(t);$('cm').textContent='Copiada. Pégala en Word.'}catch(e){$('cm').textContent='No se pudo copiar desde esta vista. Usa el enlace en un navegador.'}};
+addEventListener('resize',upd);
+$('fr').value=1000*Math.log(98/50)/Math.log(60);P.f=98;upd();if(!RM)requestAnimationFrame(loop);
+</script></body></html>
